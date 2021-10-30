@@ -6,6 +6,8 @@ import com.example.weathernotifier.API.Hourly;
 
 import java.util.List;
 
+// This is the top of the API. Everything else is contained herein.
+
 public class WxOneCall {
 
     public String timezone;
