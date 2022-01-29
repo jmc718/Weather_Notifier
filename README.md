@@ -21,8 +21,9 @@ I used Android Studio and Java to create this app. Open Weather Map's "One Call 
 * [Open Weather Map](https://openweathermap.org/api)
 * [YouTube Tutorial for Android Notifications](https://www.youtube.com/watch?v=Y73r1Q7RZwM)
 * [JSON Formatter](https://jsonformatter.curiousconcept.com/#)
+* [How to get Location Android](https://stackoverflow.com/questions/1513485/how-do-i-get-the-current-gps-location-programmatically-in-android)
 
 # Future Work
-* Timer functionality should be included to guage when the app should next check the current temperature
+* Timer functionality should be included to gauge when the app should next check the current temperature
 * The app will use the hourly temperatures list to create a timer of when to check if the temperature has reached the threshold
 * Functionality will be added so the app can run in the background

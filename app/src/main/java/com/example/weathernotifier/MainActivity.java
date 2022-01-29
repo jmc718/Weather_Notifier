@@ -1,18 +1,19 @@
 package com.example.weathernotifier;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
-
-import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.content.Context;
+import android.location.LocationListener;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.view.View;
 import android.widget.EditText;
-
 
 import com.example.weathernotifier.API.Key;
 import com.google.gson.Gson;
@@ -20,6 +21,14 @@ import com.google.gson.Gson;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
+import java.util.Timer;
+import java.util.TimerTask;
+
+import android.Manifest;
+import android.content.pm.PackageManager;
+import android.location.Location;
+import android.location.LocationManager;
+import android.widget.Toast;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -28,9 +37,20 @@ public class MainActivity extends AppCompatActivity {
 
     EditText threshInput;
 
+    private static final int REQUEST_LOCATION = 1;
+    public String latitude;
+    public String longitude;
+
+    private Timer mTimer1;
+    private TimerTask mTt1;
+    private Handler mTimerHandler = new Handler();
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
+
+//      This is For Push notifications
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         createNotificationChannel();
@@ -47,7 +67,7 @@ public class MainActivity extends AppCompatActivity {
         Thread t = new Thread(new Runnable() {
             @Override
             public void run() {
-               checkTempsThread();
+                checkTempsThread();
             }
         });
         t.start();
@@ -55,12 +75,13 @@ public class MainActivity extends AppCompatActivity {
 
 
     public void checkTempsThread() {
+        getLocation();
         Gson gson = new Gson();
         // Thanks Brother Macbeth for the awesome ability to easily pull out the JSON as a string
         HTTPHelper http = new HTTPHelper();
         // The private key and my location won't be shared publicly in the git repo
         String result = http.readHTTP("https://api.openweathermap.org/data/2.5/onecall?lat="
-                + Key.getLat() + "&lon=" + Key.getLon() + "&appid=" + Key.getKey() +
+                + latitude + "&lon=" + longitude + "&appid=" + Key.getKey() +
                 "&units=imperial");
         // The classes should be structured correctly
         WxOneCall wx = gson.fromJson(result, WxOneCall.class);
@@ -80,7 +101,7 @@ public class MainActivity extends AppCompatActivity {
         // while there are still more hours in the list
         while (i < wx.hourly.size()) {
             // check if the hour's expected temperature is above the threshold
-            if (wx.hourly.get(i).temp > threshold){
+            if (wx.hourly.get(i).temp > threshold) {
                 // and if it is, display the hour's date and time
                 displayDateTime(wx.hourly.get(i).dt);
                 // as well as the expected temperature
@@ -88,6 +109,7 @@ public class MainActivity extends AppCompatActivity {
             }
             i++;
         }
+        startTimer();
 
     }
 
@@ -95,12 +117,12 @@ public class MainActivity extends AppCompatActivity {
     public void displayDateTime(int unix_seconds) {
         //Unix seconds
         //convert seconds to milliseconds
-        Date date = new Date(unix_seconds*1000L);
+        Date date = new Date(unix_seconds * 1000L);
         // format of the date
         SimpleDateFormat jdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
         jdf.setTimeZone(TimeZone.getTimeZone("GMT-6"));
         String java_date = jdf.format(date);
-        System.out.println("\n"+java_date+"\n");
+        System.out.println("\n" + java_date + "\n");
     }
 
     // When we want to send a notification to the user that it's getting hot and should
@@ -117,7 +139,7 @@ public class MainActivity extends AppCompatActivity {
         NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
 
         // Do the actual sending of the notification
-        notificationManager.notify(100,builder.build());
+        notificationManager.notify(100, builder.build());
 
 
     }
@@ -138,6 +160,52 @@ public class MainActivity extends AppCompatActivity {
             NotificationManager notificationManager = getSystemService(NotificationManager.class);
             notificationManager.createNotificationChannel(channel);
         }
+    }
+
+    private void getLocation() {
+//        latitude = "0";
+//        longitude = "0";
+        LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_LOCATION);
+//            System.out.println("Could not get permissions for location");
+            return;
+        }
+        Location location = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+        double lon = location.getLongitude();
+        double lat = location.getLatitude();
+        latitude = String.valueOf(lat);
+        longitude = String.valueOf(lon);
+        System.out.println("Your Location: " + "\n" + "Latitude: " + latitude + "\n" + "Longitude: " + longitude);
+
+    }
+
+
+    private void stopTimer(){
+        if(mTimer1 != null){
+            mTimer1.cancel();
+            mTimer1.purge();
+        }
+    }
+
+    private void startTimer(){
+        mTimer1 = new Timer();
+        mTt1 = new TimerTask() {
+            public void run() {
+                mTimerHandler.post(new Runnable() {
+                    public void run(){
+                        System.out.println("Time's up, foolish mortal");
+                    }
+                });
+            }
+        };
+
+        mTimer1.schedule(mTt1, 5000);
     }
 
 
