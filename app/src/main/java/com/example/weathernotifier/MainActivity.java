@@ -8,6 +8,7 @@ import androidx.core.app.NotificationManagerCompat;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.Context;
+import android.content.Intent;
 import android.location.LocationListener;
 import android.os.Build;
 import android.os.Bundle;
@@ -57,6 +58,8 @@ public class MainActivity extends AppCompatActivity {
 
         threshInput = (EditText) findViewById(R.id.tempThreshold);
 
+
+
     }
 
 
@@ -83,6 +86,7 @@ public class MainActivity extends AppCompatActivity {
         String result = http.readHTTP("https://api.openweathermap.org/data/2.5/onecall?lat="
                 + latitude + "&lon=" + longitude + "&appid=" + Key.getKey() +
                 "&units=imperial");
+
         // The classes should be structured correctly
         WxOneCall wx = gson.fromJson(result, WxOneCall.class);
 
@@ -109,8 +113,9 @@ public class MainActivity extends AppCompatActivity {
             }
             i++;
         }
-        startTimer();
-
+        // This is for the Foreground Service
+        Intent serviceIntent = new Intent(this, TempCheck.class);
+        startForegroundService(serviceIntent);
     }
 
     // This was some code I found online for displyaing a unix date time in a more readable format
@@ -185,28 +190,28 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-
-    private void stopTimer(){
-        if(mTimer1 != null){
-            mTimer1.cancel();
-            mTimer1.purge();
-        }
-    }
-
-    private void startTimer(){
-        mTimer1 = new Timer();
-        mTt1 = new TimerTask() {
-            public void run() {
-                mTimerHandler.post(new Runnable() {
-                    public void run(){
-                        System.out.println("Time's up, foolish mortal");
-                    }
-                });
-            }
-        };
-
-        mTimer1.schedule(mTt1, 5000);
-    }
+//
+//    private void stopTimer(){
+//        if(mTimer1 != null){
+//            mTimer1.cancel();
+//            mTimer1.purge();
+//        }
+//    }
+//
+//    private void startTimer(){
+//        mTimer1 = new Timer();
+//        mTt1 = new TimerTask() {
+//            public void run() {
+//                mTimerHandler.post(new Runnable() {
+//                    public void run(){
+//                        System.out.println("Time's up, foolish mortal");
+//                    }
+//                });
+//            }
+//        };
+//
+//        mTimer1.schedule(mTt1, 15000);
+//    }
 
 
 
