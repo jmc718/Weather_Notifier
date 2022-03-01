@@ -31,7 +31,6 @@ import android.location.Location;
 import android.location.LocationManager;
 import android.widget.Toast;
 
-
 public class MainActivity extends AppCompatActivity {
 
     Float threshold;
@@ -79,6 +78,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void checkTempsThread() {
         getLocation();
+        /*
         Gson gson = new Gson();
         // Thanks Brother Macbeth for the awesome ability to easily pull out the JSON as a string
         HTTPHelper http = new HTTPHelper();
@@ -113,6 +113,7 @@ public class MainActivity extends AppCompatActivity {
             }
             i++;
         }
+         */
         // This is for the Foreground Service
         Intent serviceIntent = new Intent(this, TempCheck.class);
         startForegroundService(serviceIntent);
@@ -175,8 +176,7 @@ public class MainActivity extends AppCompatActivity {
                 != PackageManager.PERMISSION_GRANTED
                 && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
+            // Request permission to access the user's location
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_LOCATION);
 //            System.out.println("Could not get permissions for location");
             return;

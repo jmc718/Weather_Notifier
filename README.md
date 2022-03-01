@@ -22,7 +22,7 @@ I used Android Studio and Java to create this app. Open Weather Map's "One Call 
 * [YouTube Tutorial for Android Notifications](https://www.youtube.com/watch?v=Y73r1Q7RZwM)
 * [JSON Formatter](https://jsonformatter.curiousconcept.com/#)
 * [How to get Location Android](https://stackoverflow.com/questions/1513485/how-do-i-get-the-current-gps-location-programmatically-in-android)
-* [ADB Connection Error Fix] (https://stackoverflow.com/questions/49340436/error-initializing-adb-unable-to-create-debug-bridge-unable-to-start-adb-serve)
+* [ADB Connection Error Fix](https://stackoverflow.com/questions/49340436/error-initializing-adb-unable-to-create-debug-bridge-unable-to-start-adb-serve)
 
 # Future Work
 * Timer functionality should be included to gauge when the app should next check the current temperature
