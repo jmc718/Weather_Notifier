@@ -2,22 +2,17 @@ package com.example.weathernotifier;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
-import androidx.core.app.NotificationCompat;
-import androidx.core.app.NotificationManagerCompat;
 
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
-import android.location.LocationListener;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.view.View;
 import android.widget.EditText;
-
-import com.example.weathernotifier.API.Key;
-import com.google.gson.Gson;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -29,6 +24,8 @@ import android.Manifest;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity {
@@ -45,6 +42,11 @@ public class MainActivity extends AppCompatActivity {
     private TimerTask mTt1;
     private Handler mTimerHandler = new Handler();
 
+    RadioGroup rgDegree;
+    RadioGroup threshOption;
+    RadioButton radioButton;
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,7 +57,9 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         createNotificationChannel();
 
-        threshInput = (EditText) findViewById(R.id.tempThreshold);
+        threshInput = findViewById(R.id.tempThreshold);
+        rgDegree = findViewById(R.id.tempMeasurement);
+        threshOption = findViewById(R.id.threshOption);
 
 
 
@@ -69,53 +73,81 @@ public class MainActivity extends AppCompatActivity {
         Thread t = new Thread(new Runnable() {
             @Override
             public void run() {
-                checkTempsThread();
+                checkTempsThread(view);
             }
         });
         t.start();
     }
 
 
-    public void checkTempsThread() {
+    public void checkTempsThread(View view) {
+
+        // This is to get the stuff inside the celsius/fahrenheit radio buttons
+        int radioId = rgDegree.getCheckedRadioButtonId();
+        radioButton = findViewById(radioId);
+
+        System.out.println("Temperature will be measured in " + radioButton.getText());
+
+        String tempUnits = "standard";
+
+        if (radioButton.getText().charAt(1) == 'F')
+            tempUnits = "imperial";
+        if (radioButton.getText().charAt(1) == 'C')
+            tempUnits = "metric";
+
+        // Get the stuff inside the above/below radio buttons
+        radioId = threshOption.getCheckedRadioButtonId();
+        radioButton = findViewById(radioId);
+
+        System.out.println("Checking for temps " + radioButton.getText());
+
+        int threshNum = 1;
+
+        if (radioButton.getText().charAt(0) == 'A')
+            threshNum = 1;
+        if (radioButton.getText().charAt(0) == 'B')
+            threshNum = 2;
+
+
+        // Get the GPS location from the user
         getLocation();
-        /*
-        Gson gson = new Gson();
-        // Thanks Brother Macbeth for the awesome ability to easily pull out the JSON as a string
-        HTTPHelper http = new HTTPHelper();
-        // The private key and my location won't be shared publicly in the git repo
-        String result = http.readHTTP("https://api.openweathermap.org/data/2.5/onecall?lat="
-                + latitude + "&lon=" + longitude + "&appid=" + Key.getKey() +
-                "&units=imperial");
-
-        // The classes should be structured correctly
-        WxOneCall wx = gson.fromJson(result, WxOneCall.class);
-
-        // Mostly to test out that we've got our API working, let's print the current temp
-        System.out.println("The Current Temperature is " + wx.current.temp + "°F");
 
         // Get the threshold out of the editable text box
         String cheese = threshInput.getText().toString();
+
+//        System.out.println("Cheese contains '" + cheese + "'");
+
+        // Make sure there's actually something in there
+        if (cheese.isEmpty()) {
+//            System.out.println("The String is empty");
+
+            new Handler(Looper.getMainLooper()).post(new Runnable() {
+                @Override
+                public void run() {
+                    Toast toast = Toast.makeText(getApplicationContext(),
+                            "Please Enter a Threshold",
+                            Toast.LENGTH_LONG);
+                    toast.show();
+                }
+            });
+
+            return;
+        }
+
         // now take the string and put it in the threshold variable as a float
         threshold = Float.parseFloat(cheese);
 
-        // The Hourly class contains temperature information about every hour over the next few days
-        // For testing purposes for now, let's loop through every hour and check the temperature
-        // to see if it will be above the threshold
-        int i = 0;
-        // while there are still more hours in the list
-        while (i < wx.hourly.size()) {
-            // check if the hour's expected temperature is above the threshold
-            if (wx.hourly.get(i).temp > threshold) {
-                // and if it is, display the hour's date and time
-                displayDateTime(wx.hourly.get(i).dt);
-                // as well as the expected temperature
-                System.out.println("The Temperature will be " + wx.hourly.get(i).temp + "°F");
-            }
-            i++;
-        }
-         */
+
+
         // This is for the Foreground Service
         Intent serviceIntent = new Intent(this, TempCheck.class);
+        serviceIntent.putExtra("threshold", threshold);
+        serviceIntent.putExtra("threshOption", threshNum);
+        serviceIntent.putExtra("lat", latitude);
+        serviceIntent.putExtra("lon", longitude);
+        serviceIntent.putExtra("tempUnits", tempUnits);
+
+        // This is where the fun begins
         startForegroundService(serviceIntent);
     }
 
@@ -131,24 +163,6 @@ public class MainActivity extends AppCompatActivity {
         System.out.println("\n" + java_date + "\n");
     }
 
-    // When we want to send a notification to the user that it's getting hot and should
-    // close the window
-    public void sendNotification(View view) {
-        // build the notification itself so it can be sent off later in the function
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "hot")
-                .setSmallIcon(R.drawable.ic_baseline_add_alert_24)
-                .setContentTitle("It's getting hot in here")
-                .setContentText("You should probably close the window")
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT);
-
-        // Android has some special weird stuff it has to do to make this work
-        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
-
-        // Do the actual sending of the notification
-        notificationManager.notify(100, builder.build());
-
-
-    }
 
     // A hard coded (for now at least) notification channel through which the app can send the
     // notification
@@ -156,10 +170,10 @@ public class MainActivity extends AppCompatActivity {
         // Create the NotificationChannel, but only on API 26+ because
         // the NotificationChannel class is new and not in the support library
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            CharSequence name = "hotChannel";
-            String description = "Channel for letting the user know it is getting hot";
+            CharSequence name = "tempChannel";
+            String description = "Channel for letting the user know threshold has been reached";
             int importance = NotificationManager.IMPORTANCE_DEFAULT;
-            NotificationChannel channel = new NotificationChannel("hot", name, importance);
+            NotificationChannel channel = new NotificationChannel("temp", name, importance);
             channel.setDescription(description);
             // Register the channel with the system; you can't change the importance
             // or other notification behaviors after this
@@ -189,30 +203,6 @@ public class MainActivity extends AppCompatActivity {
         System.out.println("Your Location: " + "\n" + "Latitude: " + latitude + "\n" + "Longitude: " + longitude);
 
     }
-
-//
-//    private void stopTimer(){
-//        if(mTimer1 != null){
-//            mTimer1.cancel();
-//            mTimer1.purge();
-//        }
-//    }
-//
-//    private void startTimer(){
-//        mTimer1 = new Timer();
-//        mTt1 = new TimerTask() {
-//            public void run() {
-//                mTimerHandler.post(new Runnable() {
-//                    public void run(){
-//                        System.out.println("Time's up, foolish mortal");
-//                    }
-//                });
-//            }
-//        };
-//
-//        mTimer1.schedule(mTt1, 15000);
-//    }
-
 
 
 }

@@ -49,10 +49,12 @@ public class TempCheck extends Service {
     private static final int NOTIF_ID = 1;
     private static final String NOTIF_CHANNEL_ID = "Channel_Id";
     private static final int REQUEST_LOCATION = 1;
-    public String latitude;
-    public String longitude;
+    public String latitude = Key.getLat();
+    public String longitude = Key.getLon();
     WxOneCall wx;
     float threshold = 40.7F;
+    String tempUnits;
+    int threshOption;
 
     public TempCheck() {
     }
@@ -68,6 +70,16 @@ public class TempCheck extends Service {
                     @Override
                     public void run() {
 
+                        threshold = intent.getFloatExtra("threshold",threshold);
+                        // Code number for above or below. Above by default.
+                        threshOption = intent.getIntExtra("threshOption",1);
+
+                        // Get GPS Coords from MainActivity. Comment these two lines to use the ones
+                        // in the Key Class
+                        latitude = intent.getStringExtra("lat");
+                        longitude = intent.getStringExtra("lon");
+                        // Is it Latitude or Longitude?
+                        tempUnits = intent.getStringExtra("tempUnits");
                         tempDetect();
 
                     }
@@ -100,12 +112,27 @@ public class TempCheck extends Service {
     }
 
 
+
     /*
     Function: Temp Detect
     Description: This is the meat and potatoes of the whole app. This will check the API, wait
     until the right time, then send the user a notification that their threshold has been reached.
      */
     private void tempDetect() {
+
+        if (threshOption == 1)
+            detectAbove();
+
+        if (threshOption == 2)
+            detectBelow();
+
+    }
+
+
+
+
+    private void detectAbove() {
+
 //      Access the API and store it in a class
         wx = getTempInfo();
         int start = 0;
@@ -198,6 +225,8 @@ public class TempCheck extends Service {
 
         }
 
+
+
 //        otherwise, set a timer to check again one hour early
         else {
             System.out.println("Setting timer for ");
@@ -213,6 +242,116 @@ public class TempCheck extends Service {
 //        and call the function "recursively"
 
     }
+
+    private void detectBelow() {
+
+//      Access the API and store it in a class
+        wx = getTempInfo();
+        int start = 0;
+
+//        if the temperature has already breached the threshold
+        if (wx.current.temp < threshold){
+//        send an alert
+            sendNotification();
+//        check what time the temperature will no longer be breached
+            int iAbove = findNextAbove(wx, threshold, 0);
+//        if there are none, set a timer for a day or so
+            if (iAbove > wx.hourly.size()) {
+                System.out.println("Setting timer for ");
+                displayDateTime(wx.hourly.get(24).dt);
+                Date date = convertDateTime(wx.hourly.get(24).dt);
+                startTimer(date);
+                return;
+            }
+//            otherwise, use it as the start of our next check:
+//            when will the temperature once again be below the threshold?
+            else {
+                start = iAbove;
+            }
+
+        }
+
+//        check what hour will reach established threshold parameters
+        int iBelow = findNextBelow(wx,threshold,start);
+
+        // Initialize target date
+        Date tarDate;
+
+//        if there are no times that will reach the threshold
+        if (iBelow > wx.hourly.size()) {
+//        set a timer to check again after a day or so
+            System.out.println("Setting timer for ");
+            displayDateTime(wx.hourly.get(24).dt);
+            tarDate = convertDateTime(wx.hourly.get(24).dt);
+            startTimer(tarDate);
+            return;
+        }
+
+        // else if the temperature will be reached within the hour
+
+        else if (iBelow == 0) {
+            System.out.println("The temperature will be reached within the hour.");
+            // Get the target date time and the current date time
+            tarDate = convertDateTime(wx.hourly.get(24).dt);
+            Date currentDate = convertDateTime(wx.current.dt);
+            // Let's grab the current minute
+            int currentMinute = getDateMinutes(currentDate);
+
+            // if there are more than 5 minutes between current minute and the hour
+            if ((60 - currentMinute) > 5 ) {
+                System.out.println("There are more than 5 minutes until the hour.");
+
+                // find, percentage wise, where the threshold lies between the current temperature
+                // and the temperature at the hour
+                float percentDistance = (wx.current.temp - threshold)
+                        / (wx.current.temp - wx.hourly.get(0).temp);
+
+                // set the minute based on an approximation of when the temperature might be reached
+                // this is based on the percent of the distance between the current temperature to
+                // the threshold to the next hour's temperature
+                currentMinute += Math.round(percentDistance * (60 - currentMinute));
+
+                currentDate = setDateMinutes(currentDate, currentMinute);
+                // the "currentDate" is no longer the current date!
+                // rather, it is a date value we're going to use to...
+
+                // set the timer to go off at that time.
+                System.out.println("Setting timer for ");
+                displayDateTime(currentDate);
+                startTimer(currentDate);
+                // I could create a separate object like "newDate" or something, but why waste data?
+
+            }
+
+            // otherwise, we might as well just wait it out until the hour arrives
+            else {
+                System.out.println("There are 5 minutes or less until the hour.");
+                System.out.println("Setting timer for ");
+                displayDateTime(tarDate);
+                startTimer(tarDate);
+
+            }
+
+        }
+
+
+
+//        otherwise, set a timer to check again one hour early
+        else {
+            System.out.println("Setting timer for ");
+            displayDateTime(wx.hourly.get(iBelow - 1).dt);
+            tarDate = convertDateTime(wx.hourly.get(iBelow - 1).dt);
+            startTimer(tarDate);
+            return;
+        }
+
+//        if a timer is set, the function should return and wait for the timer to finish
+//        and call the function "recursively"
+
+    }
+
+
+
 
     private Date setDateMinutes(Date date, int minute) {
         //create a new calendar object
@@ -291,11 +430,11 @@ public class TempCheck extends Service {
         HTTPHelper http = new HTTPHelper();
         // The private key and my location won't be shared publicly in the git repo
         System.out.println("https://api.openweathermap.org/data/2.5/onecall?lat="
-                + Key.getLat() + "&lon=" + Key.getLon() + "&appid=" + Key.getKey() +
-                "&units=imperial");
+                + latitude + "&lon=" + longitude + "&appid=" + Key.getKey() +
+                "&units=" + tempUnits);
         String result = http.readHTTP("https://api.openweathermap.org/data/2.5/onecall?lat="
-                + Key.getLat() + "&lon=" + Key.getLon() + "&appid=" + Key.getKey() +
-                "&units=imperial");
+                + latitude + "&lon=" + longitude + "&appid=" + Key.getKey() +
+                "&units=" + tempUnits);
 
         // The classes should be structured correctly
         WxOneCall wx = gson.fromJson(result, WxOneCall.class);
@@ -326,7 +465,7 @@ public class TempCheck extends Service {
     // close the window
     public void sendNotification() {
         // build the notification itself so it can be sent off later in the function
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "hot")
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "temp")
                 .setSmallIcon(R.drawable.ic_baseline_add_alert_24)
                 .setContentTitle("It's getting hot in here")
                 .setContentText("You should probably close the window")
@@ -388,7 +527,6 @@ public class TempCheck extends Service {
         System.out.println("No temp above threshold found");
         return wx.hourly.size() + 1;
     }
-
 
 }
 
