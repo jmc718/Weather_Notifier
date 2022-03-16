@@ -7,7 +7,7 @@
     tools:context=".MainActivity">
 
     <TextView
-        android:id="@+id/labelThreshold2"
+        android:id="@+id/titleLabel"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
@@ -27,7 +27,7 @@
         app:layout_constraintBottom_toTopOf="@+id/labelThreshold"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/labelThreshold2">
+        app:layout_constraintTop_toBottomOf="@+id/titleLabel">
 
         <RadioButton
             android:id="@+id/aboveRadio"
@@ -78,8 +78,8 @@
         android:id="@+id/tempMeasurement"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
         android:orientation="horizontal"
-        app:layout_constraintBottom_toTopOf="@+id/checkTempButton"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/tempThreshold">
@@ -102,18 +102,87 @@
             android:textSize="20sp" />
     </RadioGroup>
 
+    <TextView
+        android:id="@+id/locationLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="151dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="152dp"
+        android:text="At Location:"
+        android:textAlignment="center"
+        android:textSize="20sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tempMeasurement" />
+
+    <TextView
+        android:id="@+id/latLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="80dp"
+        android:layout_marginTop="20dp"
+        android:text="Latitude"
+        app:layout_constraintEnd_toStartOf="@+id/lonLabel"
+        app:layout_constraintHorizontal_bias="0.139"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/locationLabel" />
+
+    <EditText
+        android:id="@+id/latInput"
+        android:layout_width="145dp"
+        android:layout_height="48dp"
+        android:ems="10"
+        android:inputType="numberSigned|numberDecimal"
+        app:layout_constraintEnd_toStartOf="@+id/lonInput"
+        app:layout_constraintHorizontal_bias="0.623"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/latLabel" />
+
+    <TextView
+        android:id="@+id/lonLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:layout_marginEnd="96dp"
+        android:text="Longitude"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/locationLabel" />
+
+    <EditText
+        android:id="@+id/lonInput"
+        android:layout_width="145dp"
+        android:layout_height="48dp"
+        android:layout_marginEnd="52dp"
+        android:ems="10"
+        android:inputType="numberSigned|numberDecimal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/lonLabel" />
+
+    <CheckBox
+        android:id="@+id/gpsCheck"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="162dp"
+        android:layout_marginTop="28dp"
+        android:layout_marginEnd="163dp"
+        android:checked="true"
+        android:text="Use GPS Instead"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/latInput" />
+
     <Button
         android:id="@+id/checkTempButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="158dp"
+        android:layout_marginTop="24dp"
         android:layout_marginEnd="159dp"
-        android:layout_marginBottom="244dp"
         android:onClick="sendMessage"
         android:text="Set Alert"
-        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.489"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/gpsCheck" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

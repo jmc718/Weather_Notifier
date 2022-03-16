@@ -12,6 +12,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
+import android.widget.CheckBox;
 import android.widget.EditText;
 
 import java.text.SimpleDateFormat;
@@ -33,18 +34,19 @@ public class MainActivity extends AppCompatActivity {
     Float threshold;
 
     EditText threshInput;
+    EditText latInput;
+    EditText lonInput;
 
     private static final int REQUEST_LOCATION = 1;
     public String latitude;
     public String longitude;
 
-    private Timer mTimer1;
-    private TimerTask mTt1;
     private Handler mTimerHandler = new Handler();
 
     RadioGroup rgDegree;
     RadioGroup threshOption;
     RadioButton radioButton;
+    CheckBox checkbox;
 
 
 
@@ -60,6 +62,9 @@ public class MainActivity extends AppCompatActivity {
         threshInput = findViewById(R.id.tempThreshold);
         rgDegree = findViewById(R.id.tempMeasurement);
         threshOption = findViewById(R.id.threshOption);
+        checkbox = findViewById(R.id.gpsCheck);
+        latInput = findViewById(R.id.latInput);
+        lonInput = findViewById(R.id.lonInput);
 
 
 
@@ -82,20 +87,9 @@ public class MainActivity extends AppCompatActivity {
 
     public void checkTempsThread(View view) {
 
-        // This is to get the stuff inside the celsius/fahrenheit radio buttons
-        int radioId = rgDegree.getCheckedRadioButtonId();
-        radioButton = findViewById(radioId);
-
-        System.out.println("Temperature will be measured in " + radioButton.getText());
-
-        String tempUnits = "standard";
-
-        if (radioButton.getText().charAt(1) == 'F')
-            tempUnits = "imperial";
-        if (radioButton.getText().charAt(1) == 'C')
-            tempUnits = "metric";
 
         // Get the stuff inside the above/below radio buttons
+        int radioId;
         radioId = threshOption.getCheckedRadioButtonId();
         radioButton = findViewById(radioId);
 
@@ -109,8 +103,21 @@ public class MainActivity extends AppCompatActivity {
             threshNum = 2;
 
 
-        // Get the GPS location from the user
-        getLocation();
+
+        // This is to get the stuff inside the celsius/fahrenheit radio buttons
+        radioId = rgDegree.getCheckedRadioButtonId();
+        radioButton = findViewById(radioId);
+
+        System.out.println("Temperature will be measured in " + radioButton.getText());
+
+        String tempUnits = "standard";
+
+        if (radioButton.getText().charAt(1) == 'F')
+            tempUnits = "imperial";
+        if (radioButton.getText().charAt(1) == 'C')
+            tempUnits = "metric";
+
+
 
         // Get the threshold out of the editable text box
         String cheese = threshInput.getText().toString();
@@ -137,6 +144,11 @@ public class MainActivity extends AppCompatActivity {
         // now take the string and put it in the threshold variable as a float
         threshold = Float.parseFloat(cheese);
 
+        // Get the GPS location from the user
+        // if the user didn't provide anything, return
+        if (!getLocation()) {
+            return;
+        }
 
 
         // This is for the Foreground Service
@@ -182,27 +194,59 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void getLocation() {
+    private boolean getLocation() {
 //        latitude = "0";
 //        longitude = "0";
-        LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED
-                && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
-            // Request permission to access the user's location
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_LOCATION);
+
+        if (checkbox.isChecked()) {
+            LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                    != PackageManager.PERMISSION_GRANTED
+                    && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+                    != PackageManager.PERMISSION_GRANTED) {
+                // Request permission to access the user's location
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_LOCATION);
 //            System.out.println("Could not get permissions for location");
-            return;
+                return false;
+            }
+            Location location = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+            double lon = location.getLongitude();
+            double lat = location.getLatitude();
+            latitude = String.valueOf(lat);
+            longitude = String.valueOf(lon);
         }
-        Location location = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-        double lon = location.getLongitude();
-        double lat = location.getLatitude();
-        latitude = String.valueOf(lat);
-        longitude = String.valueOf(lon);
+
+
+
+
+        else {
+
+            latitude = latInput.getText().toString();
+            longitude = lonInput.getText().toString();
+
+            if (latitude.isEmpty() || longitude.isEmpty()) {
+//            System.out.println("The String is empty");
+
+                new Handler(Looper.getMainLooper()).post(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast toast = Toast.makeText(getApplicationContext(),
+                                "Please Enter Latitude and Longitude!",
+                                Toast.LENGTH_LONG);
+                        toast.show();
+                    }
+                });
+
+                return false;
+            }
+
+        }
+
         System.out.println("Your Location: " + "\n" + "Latitude: " + latitude + "\n" + "Longitude: " + longitude);
 
+        return true;
     }
+
 
 
 }
