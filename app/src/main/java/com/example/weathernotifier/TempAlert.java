@@ -26,6 +26,7 @@ public class TempAlert {
     public WxOneCall wx;
     public float threshold = 40.7F;
     public String tempUnits;
+    public String tempDeg;
     public int threshOption;
     private Context thisContext;
     public Date setTime;
@@ -42,6 +43,22 @@ public class TempAlert {
         longitude = intent.getStringExtra("lon");
         // Is it Latitude or Longitude?
         tempUnits = intent.getStringExtra("tempUnits");
+
+        System.out.println("temp units is " + tempUnits);
+
+        if (tempUnits.equals("imperial")) {
+            tempDeg = "°F";
+        }
+
+        else if (tempUnits.equals("metric")) {
+            tempDeg = "°C";
+        }
+
+        else {
+            tempDeg = "°";
+        }
+
+        System.out.println("temp deg is " + tempDeg);
 
         tempDetect();
 
@@ -99,11 +116,12 @@ public class TempAlert {
         Date tarDate;
 
 //        if there are no times that will reach the threshold
-        if (iAbove > wx.hourly.size()) {
-//        set a timer to check again after a day or so
+        // within a reasonable timeframe
+        if (iAbove > 16) {
+//        set a timer to check again after a reasonable time
             System.out.println("Setting timer for ");
-            displayDateTime(wx.hourly.get(24).dt, wx.timezone);
-            tarDate = convertDateTime(wx.hourly.get(24).dt);
+            displayDateTime(wx.hourly.get(12).dt, wx.timezone);
+            tarDate = convertDateTime(wx.hourly.get(12).dt);
             startTimer(tarDate);
             return;
         }
@@ -160,11 +178,19 @@ public class TempAlert {
 
 
 
-//        otherwise, set a timer to check again one hour early
+//        otherwise, set a timer to check again a little bit early
         else {
+            // the further out it is, the more inaccurate the prediction is likely to be.
+            // As such, we want to cut off about one quarter of the time and check then.
+            int target = (int) Math.ceil(iAbove - (iAbove * .25));
+
+            System.out.println("API says threshold will be reached " + iAbove
+                    + " hours from now. Setting a timer for " + target
+                    + " hours from now.");
+
             System.out.println("Setting timer for ");
-            displayDateTime(wx.hourly.get(iAbove - 1).dt, wx.timezone);
-            tarDate = convertDateTime(wx.hourly.get(iAbove - 1).dt);
+            displayDateTime(wx.hourly.get(target).dt, wx.timezone);
+            tarDate = convertDateTime(wx.hourly.get(target).dt);
             startTimer(tarDate);
             return;
         }
@@ -212,11 +238,12 @@ public class TempAlert {
         Date tarDate;
 
 //        if there are no times that will reach the threshold
-        if (iBelow > wx.hourly.size()) {
-//        set a timer to check again after a day or so
+//        // within a reasonable timeframe
+        if (iBelow > 16) {
+//        set a timer to check again at a reasonable time
             System.out.println("Setting timer for ");
-            displayDateTime(wx.hourly.get(24).dt, wx.timezone);
-            tarDate = convertDateTime(wx.hourly.get(24).dt);
+            displayDateTime(wx.hourly.get(12).dt, wx.timezone);
+            tarDate = convertDateTime(wx.hourly.get(12).dt);
             startTimer(tarDate);
             return;
         }
@@ -270,11 +297,19 @@ public class TempAlert {
 
 
 
-//        otherwise, set a timer to check again one hour early
+//        otherwise, set a timer to check again early
         else {
+            // the further out it is, the more inaccurate the prediction is likely to be.
+            // As such, we want to cut off about one quarter of the time and check then.
+            int target = (int) Math.ceil(iBelow - (iBelow * .25));
+
+            System.out.println("API says threshold will be reached " + iBelow
+                    + " hours from now. Setting a timer for " + target
+                    + " hours from now.");
+
             System.out.println("Setting timer for ");
-            displayDateTime(wx.hourly.get(iBelow - 1).dt, wx.timezone);
-            tarDate = convertDateTime(wx.hourly.get(iBelow - 1).dt);
+            displayDateTime(wx.hourly.get(target).dt, wx.timezone);
+            tarDate = convertDateTime(wx.hourly.get(target).dt);
             startTimer(tarDate);
             return;
         }
@@ -382,7 +417,7 @@ public class TempAlert {
         System.out.println("Temp at index 0: " + wx.hourly.get(0).temp);
 
         // Mostly to test out that we've got our API working, let's print the current temp
-        System.out.println("The Current Temperature is " + wx.current.temp + "°F");
+        System.out.println("The Current Temperature is " + wx.current.temp + tempDeg);
 
         return wx;
     }
@@ -391,10 +426,26 @@ public class TempAlert {
     // close the window
     public void sendNotification() {
         // build the notification itself so it can be sent off later in the function
+        String title = "";
+        String text = "";
+
+        title += "Threshold reached!";
+        text += "It is now ";
+
+        if (threshOption == 1) {
+            text += "above ";
+        }
+        else {
+            text += "below ";
+        }
+
+        text += threshold + tempDeg;
+
+
         NotificationCompat.Builder builder = new NotificationCompat.Builder(thisContext, "temp")
                 .setSmallIcon(R.drawable.ic_baseline_add_alert_24)
-                .setContentTitle("It's getting hot in here")
-                .setContentText("You should probably close the window")
+                .setContentTitle(title)
+                .setContentText(text)
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT);
 
         // Android has some special weird stuff it has to do to make this work
@@ -418,7 +469,7 @@ public class TempAlert {
                 // and if it is, display the hour's date and time
                 displayDateTime(wx.hourly.get(i).dt, wx.timezone);
                 // as well as the expected temperature
-                System.out.println("The Temperature will be " + wx.hourly.get(i).temp + "°F"
+                System.out.println("The Temperature will be " + wx.hourly.get(i).temp + tempDeg
                         + " Which is below our threshold of " + threshold);
                 // return the index
                 return i;
@@ -442,7 +493,7 @@ public class TempAlert {
                 // and if it is, display the hour's date and time
                 displayDateTime(wx.hourly.get(i).dt, wx.timezone);
                 // as well as the expected temperature
-                System.out.println("The Temperature will be " + wx.hourly.get(i).temp + "°F"
+                System.out.println("The Temperature will be " + wx.hourly.get(i).temp + tempDeg
                         + " Which is above our threshold of " + threshold);
                 // return the index
                 return i;

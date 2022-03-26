@@ -85,8 +85,8 @@ public class TempCheck extends Service {
 
         getSystemService(NotificationManager.class).createNotificationChannel(channel);
         Notification.Builder notification = new Notification.Builder(this, CHANNELID)
-                .setContentText("Service is running")
-                .setContentTitle("Service enabled")
+                .setContentText("You'll be notified when your threshold is reached")
+                .setContentTitle("Watching the Temperature")
                 .setSmallIcon(R.drawable.ic_baseline_add_alert_24);
 
 

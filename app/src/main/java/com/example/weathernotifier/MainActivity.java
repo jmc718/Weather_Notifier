@@ -7,10 +7,13 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
+import android.location.Criteria;
+import android.location.LocationListener;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 import android.view.View;
 import android.widget.CheckBox;
 import android.widget.EditText;
@@ -29,7 +32,7 @@ import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.Toast;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements LocationListener {
 
     Float threshold;
 
@@ -41,13 +44,19 @@ public class MainActivity extends AppCompatActivity {
     public String latitude;
     public String longitude;
 
+    Intent intentThatCalled;
+    public LocationManager locationManager;
+    public Criteria criteria;
+    public String bestProvider;
+
+    String voice2text;
+
     private Handler mTimerHandler = new Handler();
 
     RadioGroup rgDegree;
     RadioGroup threshOption;
     RadioButton radioButton;
     CheckBox checkbox;
-
 
 
     @Override
@@ -58,6 +67,8 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         createNotificationChannel();
+        intentThatCalled = getIntent();
+        voice2text = intentThatCalled.getStringExtra("v2txt");
 
         threshInput = findViewById(R.id.tempThreshold);
         rgDegree = findViewById(R.id.tempMeasurement);
@@ -65,7 +76,6 @@ public class MainActivity extends AppCompatActivity {
         checkbox = findViewById(R.id.gpsCheck);
         latInput = findViewById(R.id.latInput);
         lonInput = findViewById(R.id.lonInput);
-
 
 
     }
@@ -103,7 +113,6 @@ public class MainActivity extends AppCompatActivity {
             threshNum = 2;
 
 
-
         // This is to get the stuff inside the celsius/fahrenheit radio buttons
         radioId = rgDegree.getCheckedRadioButtonId();
         radioButton = findViewById(radioId);
@@ -116,7 +125,6 @@ public class MainActivity extends AppCompatActivity {
             tempUnits = "imperial";
         if (radioButton.getText().charAt(1) == 'C')
             tempUnits = "metric";
-
 
 
         // Get the threshold out of the editable text box
@@ -194,30 +202,64 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private boolean getLocation() {
-//        latitude = "0";
-//        longitude = "0";
+
+    public static boolean isLocationEnabled(Context context) {
+        //...............
+        return true;
+    }
+
+    protected boolean getLocation() {
+
 
         if (checkbox.isChecked()) {
-            LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-                    != PackageManager.PERMISSION_GRANTED
-                    && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
-                    != PackageManager.PERMISSION_GRANTED) {
-                // Request permission to access the user's location
-                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_LOCATION);
-//            System.out.println("Could not get permissions for location");
-                return false;
+            if (isLocationEnabled(MainActivity.this)) {
+                locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+                criteria = new Criteria();
+                bestProvider = String.valueOf(locationManager.getBestProvider(criteria, true)).toString();
+
+                //You can still do this if you like, you might get lucky:
+                if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                    // TODO: Consider calling
+                    //    ActivityCompat#requestPermissions
+                    // here to request the missing permissions, and then overriding
+                    //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                    //                                          int[] grantResults)
+                    // to handle the case where the user grants the permission. See the documentation
+                    // for ActivityCompat#requestPermissions for more details.
+                    return false;
+                }
+                Location location = locationManager.getLastKnownLocation(bestProvider);
+                if (location != null) {
+                    Log.e("TAG", "GPS is on");
+                    double lon = location.getLongitude();
+                    double lat = location.getLatitude();
+                    latitude = String.valueOf(lat);
+                    longitude = String.valueOf(lon);
+                    System.out.println("Your Location: " + "\n" + "Latitude: " + latitude + "\n" + "Longitude: " + longitude);
+                    searchNearestPlace(voice2text);
+                } else {
+                    //This is what you need:
+                    if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                        // TODO: Consider calling
+                        //    ActivityCompat#requestPermissions
+                        // here to request the missing permissions, and then overriding
+                        //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                        //                                          int[] grantResults)
+                        // to handle the case where the user grants the permission. See the documentation
+                        // for ActivityCompat#requestPermissions for more details.
+                        return false;
+                    }
+                    new Handler(Looper.getMainLooper()).post(() -> {
+                        locationManager.requestLocationUpdates(bestProvider, 1000, 0, this);
+                    });
+                }
             }
-            Location location = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-            double lon = location.getLongitude();
-            double lat = location.getLatitude();
-            latitude = String.valueOf(lat);
-            longitude = String.valueOf(lon);
+            else
+            {
+                //prompt user to enable location....
+                //.................
+            }
         }
-
-
-
 
         else {
 
@@ -225,16 +267,13 @@ public class MainActivity extends AppCompatActivity {
             longitude = lonInput.getText().toString();
 
             if (latitude.isEmpty() || longitude.isEmpty()) {
-//            System.out.println("The String is empty");
+//                System.out.println("The String is empty");
 
-                new Handler(Looper.getMainLooper()).post(new Runnable() {
-                    @Override
-                    public void run() {
-                        Toast toast = Toast.makeText(getApplicationContext(),
-                                "Please Enter Latitude and Longitude!",
-                                Toast.LENGTH_LONG);
-                        toast.show();
-                    }
+                new Handler(Looper.getMainLooper()).post(() -> {
+                    Toast toast = Toast.makeText(getApplicationContext(),
+                            "Please Enter Latitude and Longitude!",
+                            Toast.LENGTH_LONG);
+                    toast.show();
                 });
 
                 return false;
@@ -242,10 +281,123 @@ public class MainActivity extends AppCompatActivity {
 
         }
 
-        System.out.println("Your Location: " + "\n" + "Latitude: " + latitude + "\n" + "Longitude: " + longitude);
 
+        System.out.println("Your Location: " + "\n" + "Latitude: " + latitude + "\n" + "Longitude: " + longitude);
+//
         return true;
+
     }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        locationManager.removeUpdates(this);
+
+    }
+
+    @Override
+    public void onLocationChanged(Location location) {
+        //Hey, a non null location! Sweet!
+
+        //remove location callback:
+        locationManager.removeUpdates(this);
+
+        //open the map:
+        double lon = location.getLongitude();
+        double lat = location.getLatitude();
+        latitude = String.valueOf(lat);
+        longitude = String.valueOf(lon);
+        System.out.println("Your Location: " + "\n" + "Latitude: " + latitude + "\n" + "Longitude: " + longitude);
+        searchNearestPlace(voice2text);
+    }
+
+    @Override
+    public void onStatusChanged(String provider, int status, Bundle extras) {
+
+    }
+
+    @Override
+    public void onProviderEnabled(String provider) {
+
+    }
+
+    @Override
+    public void onProviderDisabled(String provider) {
+
+    }
+
+    public void searchNearestPlace(String v2txt) {
+        //.....
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//    private boolean getLocation() {
+////        latitude = "0";
+////        longitude = "0";
+//
+//        if (checkbox.isChecked()) {
+//            LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+//            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+//                    != PackageManager.PERMISSION_GRANTED
+//                    && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+//                    != PackageManager.PERMISSION_GRANTED) {
+//                // Request permission to access the user's location
+//                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_LOCATION);
+////            System.out.println("Could not get permissions for location");
+//                return false;
+//            }
+//            Location location = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+//            double lon = location.getLongitude();
+//            double lat = location.getLatitude();
+//            latitude = String.valueOf(lat);
+//            longitude = String.valueOf(lon);
+//        }
+//
+//
+//
+//
+//        else {
+//
+//            latitude = latInput.getText().toString();
+//            longitude = lonInput.getText().toString();
+//
+//            if (latitude.isEmpty() || longitude.isEmpty()) {
+////            System.out.println("The String is empty");
+//
+//                new Handler(Looper.getMainLooper()).post(new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        Toast toast = Toast.makeText(getApplicationContext(),
+//                                "Please Enter Latitude and Longitude!",
+//                                Toast.LENGTH_LONG);
+//                        toast.show();
+//                    }
+//                });
+//
+//                return false;
+//            }
+//
+//        }
+//
+//        System.out.println("Your Location: " + "\n" + "Latitude: " + latitude + "\n" + "Longitude: " + longitude);
+//
+//        return true;
+//    }
 
 
 
