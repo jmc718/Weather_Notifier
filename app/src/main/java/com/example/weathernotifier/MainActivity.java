@@ -3,9 +3,11 @@ package com.example.weathernotifier;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
+import android.app.AlertDialog;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.location.Criteria;
 import android.location.LocationListener;
@@ -31,6 +33,9 @@ import android.location.LocationManager;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.Toast;
+
+import pub.devrel.easypermissions.AfterPermissionGranted;
+import pub.devrel.easypermissions.EasyPermissions;
 
 public class MainActivity extends AppCompatActivity implements LocationListener {
 
@@ -58,6 +63,8 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     RadioButton radioButton;
     CheckBox checkbox;
 
+    private final int REQUEST_LOCATION_PERMISSION = 1;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,6 +73,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 //      This is For Push notifications
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        requestLocationPermission();
         createNotificationChannel();
         intentThatCalled = getIntent();
         voice2text = intentThatCalled.getStringExtra("v2txt");
@@ -78,6 +86,25 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         lonInput = findViewById(R.id.lonInput);
 
 
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        // Forward results to EasyPermissions
+        EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this);
+    }
+
+    @AfterPermissionGranted(REQUEST_LOCATION_PERMISSION)
+    public void requestLocationPermission() {
+        String[] perms = {Manifest.permission.ACCESS_FINE_LOCATION};
+        if(EasyPermissions.hasPermissions(this, perms)) {
+            Toast.makeText(this, "Permission already granted", Toast.LENGTH_SHORT).show();
+        }
+        else {
+            EasyPermissions.requestPermissions(this, "Please grant the location permission", REQUEST_LOCATION_PERMISSION, perms);
+        }
     }
 
 
@@ -210,7 +237,6 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
     protected boolean getLocation() {
 
-
         if (checkbox.isChecked()) {
             if (isLocationEnabled(MainActivity.this)) {
                 locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
@@ -219,14 +245,15 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
                 //You can still do this if you like, you might get lucky:
                 if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                    // TODO: Consider calling
+                    //  TODO: Consider calling
                     //    ActivityCompat#requestPermissions
                     // here to request the missing permissions, and then overriding
                     //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
                     //                                          int[] grantResults)
                     // to handle the case where the user grants the permission. See the documentation
                     // for ActivityCompat#requestPermissions for more details.
-                    return false;
+//                    return false;
+
                 }
                 Location location = locationManager.getLastKnownLocation(bestProvider);
                 if (location != null) {
