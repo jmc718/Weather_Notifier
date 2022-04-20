@@ -66,7 +66,7 @@
         android:layout_height="wrap_content"
         android:ems="10"
         android:hint="68"
-        android:inputType="number"
+        android:inputType="numberSigned|numberDecimal"
         android:minHeight="48dp"
         app:layout_constraintBottom_toTopOf="@+id/tempMeasurement"
         app:layout_constraintEnd_toEndOf="parent"

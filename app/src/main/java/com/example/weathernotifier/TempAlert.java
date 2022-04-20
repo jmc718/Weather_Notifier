@@ -184,6 +184,11 @@ public class TempAlert {
             // As such, we want to cut off about one quarter of the time and check then.
             int target = (int) Math.ceil(iAbove - (iAbove * .25));
 
+            if (target == 2 || target == 3)
+            {
+                target -= 1;
+            }
+
             System.out.println("API says threshold will be reached " + iAbove
                     + " hours from now. Setting a timer for " + target
                     + " hours from now.");
