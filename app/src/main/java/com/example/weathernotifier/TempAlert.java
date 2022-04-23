@@ -435,7 +435,7 @@ public class TempAlert {
         String text = "";
 
         title += "Threshold reached!";
-        text += "It is now ";
+        text += "It is now " + wx.current + tempDeg + " which is ";
 
         if (threshOption == 1) {
             text += "above ";
