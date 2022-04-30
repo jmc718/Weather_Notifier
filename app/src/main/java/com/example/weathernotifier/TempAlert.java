@@ -79,7 +79,8 @@ public class TempAlert {
     }
 
 
-
+/* TODO Check which parts of detectAbove and detectBelow might be able to be combined into separate
+    functions in their own modules. */
 
     private void detectAbove() {
 
@@ -119,6 +120,8 @@ public class TempAlert {
         // within a reasonable timeframe
         if (iAbove > 16) {
 //        set a timer to check again after a reasonable time
+            System.out.println("That's over 16 hours from now so we'll ignore the prediction and" +
+                    " check it again in 12 hours");
             System.out.println("Setting timer for ");
             displayDateTime(wx.hourly.get(12).dt, wx.timezone);
             tarDate = convertDateTime(wx.hourly.get(12).dt);
@@ -184,7 +187,7 @@ public class TempAlert {
             // As such, we want to cut off about one quarter of the time and check then.
             int target = (int) Math.ceil(iAbove - (iAbove * .25));
 
-            if (target == 2 || target == 3)
+            if (target < 3 && target > 0)
             {
                 target -= 1;
             }
@@ -246,6 +249,8 @@ public class TempAlert {
 //        // within a reasonable timeframe
         if (iBelow > 16) {
 //        set a timer to check again at a reasonable time
+            System.out.println("That's over 16 hours from now so we'll ignore the prediction and" +
+                    " check it again in 12 hours");
             System.out.println("Setting timer for ");
             displayDateTime(wx.hourly.get(12).dt, wx.timezone);
             tarDate = convertDateTime(wx.hourly.get(12).dt);
@@ -307,6 +312,11 @@ public class TempAlert {
             // the further out it is, the more inaccurate the prediction is likely to be.
             // As such, we want to cut off about one quarter of the time and check then.
             int target = (int) Math.ceil(iBelow - (iBelow * .25));
+
+            if (target < 3 && target > 0)
+            {
+                target -= 1;
+            }
 
             System.out.println("API says threshold will be reached " + iBelow
                     + " hours from now. Setting a timer for " + target
@@ -435,7 +445,7 @@ public class TempAlert {
         String text = "";
 
         title += "Threshold reached!";
-        text += "It is now " + wx.current + tempDeg + " which is ";
+        text += "It is now " + wx.current.temp + tempDeg + " which is ";
 
         if (threshOption == 1) {
             text += "above ";
