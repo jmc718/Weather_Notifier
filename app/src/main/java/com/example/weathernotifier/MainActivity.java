@@ -3,11 +3,10 @@ package com.example.weathernotifier;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
-import android.app.AlertDialog;
+
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.location.Criteria;
 import android.location.LocationListener;
@@ -19,12 +18,6 @@ import android.util.Log;
 import android.view.View;
 import android.widget.CheckBox;
 import android.widget.EditText;
-
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.TimeZone;
-import java.util.Timer;
-import java.util.TimerTask;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
@@ -45,7 +38,6 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     EditText latInput;
     EditText lonInput;
 
-    private static final int REQUEST_LOCATION = 1;
     public String latitude;
     public String longitude;
 
@@ -55,8 +47,6 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     public String bestProvider;
 
     String voice2text;
-
-    private Handler mTimerHandler = new Handler();
 
     RadioGroup rgDegree;
     RadioGroup threshOption;
@@ -198,18 +188,6 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         startForegroundService(serviceIntent);
     }
 
-    // This was some code I found online for displyaing a unix date time in a more readable format
-    public void displayDateTime(int unix_seconds) {
-        //Unix seconds
-        //convert seconds to milliseconds
-        Date date = new Date(unix_seconds * 1000L);
-        // format of the date
-        SimpleDateFormat jdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
-        jdf.setTimeZone(TimeZone.getTimeZone("GMT-6"));
-        String java_date = jdf.format(date);
-        System.out.println("\n" + java_date + "\n");
-    }
-
 
     // A hard coded (for now at least) notification channel through which the app can send the
     // notification
@@ -317,8 +295,13 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
     @Override
     protected void onPause() {
-        super.onPause();
-        locationManager.removeUpdates(this);
+        try {
+            super.onPause();
+            locationManager.removeUpdates(this);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
 
     }
 
@@ -357,74 +340,6 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         //.....
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//    private boolean getLocation() {
-////        latitude = "0";
-////        longitude = "0";
-//
-//        if (checkbox.isChecked()) {
-//            LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-//            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-//                    != PackageManager.PERMISSION_GRANTED
-//                    && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
-//                    != PackageManager.PERMISSION_GRANTED) {
-//                // Request permission to access the user's location
-//                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_LOCATION);
-////            System.out.println("Could not get permissions for location");
-//                return false;
-//            }
-//            Location location = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-//            double lon = location.getLongitude();
-//            double lat = location.getLatitude();
-//            latitude = String.valueOf(lat);
-//            longitude = String.valueOf(lon);
-//        }
-//
-//
-//
-//
-//        else {
-//
-//            latitude = latInput.getText().toString();
-//            longitude = lonInput.getText().toString();
-//
-//            if (latitude.isEmpty() || longitude.isEmpty()) {
-////            System.out.println("The String is empty");
-//
-//                new Handler(Looper.getMainLooper()).post(new Runnable() {
-//                    @Override
-//                    public void run() {
-//                        Toast toast = Toast.makeText(getApplicationContext(),
-//                                "Please Enter Latitude and Longitude!",
-//                                Toast.LENGTH_LONG);
-//                        toast.show();
-//                    }
-//                });
-//
-//                return false;
-//            }
-//
-//        }
-//
-//        System.out.println("Your Location: " + "\n" + "Latitude: " + latitude + "\n" + "Longitude: " + longitude);
-//
-//        return true;
-//    }
 
 
 
