@@ -2,6 +2,7 @@ package com.example.weathernotifier;
 
 import android.content.Context;
 import android.content.Intent;
+import android.os.Environment;
 import android.os.Handler;
 
 import androidx.core.app.NotificationCompat;
@@ -10,6 +11,7 @@ import androidx.core.app.NotificationManagerCompat;
 import com.example.weathernotifier.API.Key;
 import com.google.gson.Gson;
 
+import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -468,6 +470,17 @@ public class TempAlert {
 
         // Do the actual sending of the notification
         notificationManager.notify(100, builder.build());
+
+        // save logcat to file
+        File filename = new File(Environment.getExternalStorageDirectory()+"/WNLog.log");
+        try {
+            System.out.println(filename);
+            filename.createNewFile();
+            String cmd = "logcat -d -f"+filename.getAbsolutePath();
+            Runtime.getRuntime().exec(cmd);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
 
     }

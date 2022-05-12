@@ -12,8 +12,10 @@ import android.location.Criteria;
 import android.location.LocationListener;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
 import android.widget.CheckBox;
@@ -26,6 +28,8 @@ import android.location.LocationManager;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.Toast;
+
+import java.io.File;
 
 import pub.devrel.easypermissions.AfterPermissionGranted;
 import pub.devrel.easypermissions.EasyPermissions;
@@ -64,6 +68,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         requestLocationPermission();
+        requestWritePermission();
         createNotificationChannel();
         intentThatCalled = getIntent();
         voice2text = intentThatCalled.getStringExtra("v2txt");
@@ -94,6 +99,16 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         }
         else {
             EasyPermissions.requestPermissions(this, "Please grant the location permission", REQUEST_LOCATION_PERMISSION, perms);
+        }
+    }
+
+    public void requestWritePermission() {
+        if (Build.VERSION.SDK_INT >= 30){
+            if (!Environment.isExternalStorageManager()){
+                Intent getpermission = new Intent();
+                getpermission.setAction(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION);
+                startActivity(getpermission);
+            }
         }
     }
 
@@ -300,6 +315,16 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
             locationManager.removeUpdates(this);
         } catch (Exception e) {
             e.printStackTrace();
+            // save logcat to file
+            File filename = new File(Environment.getExternalStorageDirectory()+"/WNLog.log");
+            try {
+                System.out.println(filename);
+                filename.createNewFile();
+                String cmd = "logcat -d -f"+filename.getAbsolutePath();
+                Runtime.getRuntime().exec(cmd);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
         }
 
 
