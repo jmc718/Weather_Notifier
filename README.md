@@ -17,7 +17,6 @@ I used Android Studio and Java to create this app. Open Weather Map's "One Call 
 
 # Useful Websites
 
-{Make a list of websites that you found helpful in this project}
 * [Open Weather Map](https://openweathermap.org/api)
 * [YouTube Tutorial for Android Notifications](https://www.youtube.com/watch?v=Y73r1Q7RZwM)
 * [JSON Formatter](https://jsonformatter.curiousconcept.com/#)
